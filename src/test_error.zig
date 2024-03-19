@@ -30,3 +30,43 @@ test "returning an error" {
         return;
     };
 }
+
+fn failFn() error{Oops}!i32 {
+    try failingFunction();
+    return 12;
+}
+
+test "try" {
+    var v = failFn() catch |err| {
+        try expect(err == error.Oops);
+        return;
+    };
+    try expect(v == 12);
+}
+
+var problems: u32 = 98;
+
+fn failFnCounter() error{Oops}!void {
+    errdefer problems += 1;
+    try failingFunction();
+}
+
+test "errdefer" {
+    failingFunction() catch |err| {
+        try expect(err == error.Oops);
+        //HMMM
+        try expect(problems == 98);
+        return;
+    };
+}
+
+fn createFile() !void {
+    return error.AccessDenied;
+}
+
+test "inferred error set" {
+    const x: error{AccessDenied}!void = createFile();
+    _ = x catch |err| {
+        try expect(err == error.AccessDenied);
+    };
+}
